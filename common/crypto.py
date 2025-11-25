@@ -2,7 +2,7 @@ import math
 import random
 
 
-
+"""source et aide : github simple rsa encryption"""
 def is_prime(n):
     """verifie si un nombre est premier"""
     if n <= 1:
@@ -33,3 +33,19 @@ def generate_keys():
     d = pow(e, -1, phi)
     return ((e, n), (d, n))
 
+
+"""chiffre le message avec la clé publique"""
+def encrypt(message: str, public_key):
+    
+    e, n = public_key
+    data = [pow(ord(c), e, n) for c in message]
+    return data 
+
+
+"""déchiffre un message avec la clé privée"""
+def decrypt(data, private_key):
+
+
+    d, n = private_key
+    message = ''.join([chr(pow(c, d, n)) for c in data])
+    return message
