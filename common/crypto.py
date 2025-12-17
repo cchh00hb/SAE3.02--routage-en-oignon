@@ -43,12 +43,12 @@ def encrypt(message: str, public_key):
 
 
 """déchiffre un message avec la clé privée"""
-def decrypt(data, private_key):
-    d, n = private_key
+def decrypt(data, private_key): #fonction decrypt quui possede 2 parametres, data soit les donnees chiffrees et private_key la cle privee
+    d, n = private_key # en rsa la cle privee est représentée par ces deux valeurs, sert pour effectuer le calcul de dechiffrement 
     
-    if isinstance(data, str):
-        data_list = [int(x) for x in data.split(',')]
+    if isinstance(data, str): #verifie si data est une chaine de caractere
+        data_list = [int(x) for x in data.split(',')] #datasplit =  divise la chaîne en une liste de sous-chaînes
     else:
-        data_list = data
-    message = ''.join([chr(pow(c, d, n)) for c in data_list])
-    return message
+        data_list = data #Sinon (else), data est déjà une liste d'entiers, donc on l'utilise directement
+    message = ''.join([chr(pow(c, d, n)) for c in data_list]) #exponentiation modulaire. C'est le  déchiffrement RSA : en utilisant la clé privée, on "inverse" le chiffrement et join assemble tout ces characteres en une seule chaine de characteres
+    return message #retour du resultat

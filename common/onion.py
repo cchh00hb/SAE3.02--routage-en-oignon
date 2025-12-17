@@ -26,6 +26,9 @@ def construire_oignon(message, destinataire, chemin_routeurs, cles_publiques):
         except KeyError:  # Erreur si la clé publique du routeur n'existe pas
             print(f"Erreur: Clé publique manquante pour {routeur}")
             return None  # Arrête la construction si clé manquante
+        except Exception as e:
+            print(f"Erreur chiffrement pour {routeur}: {e}")
+            return None
     
     return couche_actuelle  # Retourne l'oignon complet (message multi-couches)
 
@@ -33,9 +36,17 @@ def dechiffrer_couche(message_chiffre, cle_privee):
     """
     Dechiffre une couche d'oignon et retourne les informations
     """
+    if not message_chiffre:
+        print("Erreur: message vide")
+        return None
+        
     try:
         couche_claire = decrypt(message_chiffre, cle_privee)  # Déchiffre avec la clé privée du routeur
-        print(f"Couche dechiffree: {couche_claire}")  # Debug: affiche ce qui a été déchiffré
+        if not couche_claire:
+            print("Erreur: déchiffrement échoué")
+            return None
+            
+        # print(f"Couche dechiffree: {couche_claire}")  # DEBUG
         
         if couche_claire.startswith("NEXT:"):  # Si c'est une couche intermédiaire (indique le prochain saut)
             parts = couche_claire.split("|", 1)  # Sépare en 2 parties max (évite les erreurs si "|" dans les données)
@@ -43,6 +54,8 @@ def dechiffrer_couche(message_chiffre, cle_privee):
                 next_hop = parts[0].replace("NEXT:", "")  # Extrait le prochain routeur
                 data = parts[1].replace("DATA:", "")  # Extrait les données chiffrées restantes
                 return "NEXT", next_hop, data  # Retourne le type, le saut, et les données
+            else:
+                return "UNKNOWN", "", couche_claire
         
         elif couche_claire.startswith("DEST:"):  # Si c'est la couche finale (message pour le destinataire)
             parts = couche_claire.split("|", 1)  # Même parsing
@@ -50,11 +63,13 @@ def dechiffrer_couche(message_chiffre, cle_privee):
                 destinataire = parts[0].replace("DEST:", "")  # Extrait le destinataire
                 message = parts[1].replace("MSG:", "")  # Extrait le message
                 return "DEST", destinataire, message  # Retourne le type, dest, et message
+            else:
+                return "UNKNOWN", "", couche_claire
         
         return "UNKNOWN", "", couche_claire  # Si format inconnu, retourne tel quel
     except Exception as e:  # Capture les erreurs de déchiffrement ou parsing
         print(f"Erreur de déchiffrement: {e}")
-        return "ERROR", "", ""  # Retourne un indicateur d'erreur
+        return None  # MODIF: retourne None au lieu de tuple
 
 def choisir_chemin_aleatoire(routeurs_disponibles, nb_sauts=3):
     """Choisit un chemin aleatoire de routeurs"""
