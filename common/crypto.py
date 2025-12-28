@@ -1,54 +1,61 @@
 import math
 import random
-
-
-"""source et aide : github simple rsa encryption"""
-def is_prime(n):
-    """verifie si un nombre est premier"""
-    if n <= 1:
-        return False
-    for i in range(2, int(math.sqrt(n)) + 1):
-        if n % i == 0:
-            return False
-    return True
-
-
-
+import sympy
 def generate_keys():
-    """génère une paire de clés publique et privée (rsa)"""
-    p = 0
-    q = 0
-    while not is_prime(p): #boucle jusqua obtenir un nombre p
-        p = random.randint(11, 50) #choix aleatoire de p, la plage et petite alors a revoir plus tard pour la secutité
-    while not is_prime(q) or q == p: # boucle pour q premier et different de p
-        q = random.randint(11, 50)
-
-    n = p * q #produit de p et q (des premiers)
-    phi = (p - 1) * (q - 1) #fonctiond'euler
-
-    e = 3
-    while math.gcd(e, phi) != 1:  # Incrémente e jusqu'à ce qu'il soit copremier avec phi
-        e += 2
-
-    d = pow(e, -1, phi)  # Inverse modulaire de e modulo phi (clé privée)
-    return ((e, n), (d, n))# Retourne clé publique (e,n) et privée (d,n)
-
-
-"""chiffre le message avec la clé publique"""
-def encrypt(message: str, public_key):
-    e, n = public_key # Extrait e et n de la clé publique
-    # (formule RSA : c = m^e mod n)
-    data = [pow(ord(c), e, n) for c in message]  # Liste d'entiers chiffrés (un par char)
-    return ','.join(str(x) for x in data)
-
-
-"""déchiffre un message avec la clé privée"""
-def decrypt(data, private_key): #fonction decrypt quui possede 2 parametres, data soit les donnees chiffrees et private_key la cle privee
-    d, n = private_key # en rsa la cle privee est représentée par ces deux valeurs, sert pour effectuer le calcul de dechiffrement 
+    """RSA avec sympy pour grands nombres premiers"""
+    p = sympy.randprime(1000, 10000)
+    q = sympy.randprime(1000, 10000)
+    while q == p:
+        q = sympy.randprime(1000, 10000)
     
-    if isinstance(data, str): #verifie si data est une chaine de caractere
-        data_list = [int(x) for x in data.split(',')] #datasplit =  divise la chaîne en une liste de sous-chaînes
-    else:
-        data_list = data #Sinon (else), data est déjà une liste d'entiers, donc on l'utilise directement
-    message = ''.join([chr(pow(c, d, n)) for c in data_list]) #exponentiation modulaire. C'est le  déchiffrement RSA : en utilisant la clé privée, on "inverse" le chiffrement et join assemble tout ces characteres en une seule chaine de characteres
-    return message #retour du resultat
+    n = p * q
+    phi = (p - 1) * (q - 1)
+    
+    e = 65537
+    while math.gcd(e, phi) != 1:
+        e += 2
+    
+    d = pow(e, -1, phi)
+    return ((e, n), (d, n))
+def encrypt(message: str, public_key):
+    """Chiffre un message par blocs de 3 caracteres"""
+    e, n = public_key
+    
+    blocks = []
+    for i in range(0, len(message), 3):
+        block = message[i:i+3]
+        num = 0
+        for j, c in enumerate(block):
+            num += ord(c) * (256 ** j)
+        
+        encrypted_num = pow(num, e, n)
+        blocks.append(str(encrypted_num))
+    
+    return ','.join(blocks)
+def decrypt(data, private_key):
+    """Dechiffre un message chiffre par blocs"""
+    d, n = private_key
+    
+    try:
+        blocks = [int(x) for x in data.split(',')]
+        result = []
+        
+        for encrypted_num in blocks:
+            decrypted_num = pow(encrypted_num, d, n)
+            
+            # Extraire les 3 caracteres du bloc
+            chars = []
+            for _ in range(3):
+                if decrypted_num > 0:
+                    char_code = decrypted_num % 256
+                    if char_code > 0:
+                        chars.append(chr(char_code))
+                    decrypted_num //= 256
+            
+            result.extend(chars)
+        
+        return ''.join(result)
+        
+    except Exception as e:
+        print(f"Erreur decrypt: {e}")
+        return None
