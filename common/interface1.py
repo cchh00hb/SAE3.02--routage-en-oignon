@@ -3,19 +3,21 @@ import os
 import threading
 from datetime import datetime
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Ajout du dossier parent au chemin pour trouver le module 'common'
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
-                             QHBoxLayout, QTextEdit, QLineEdit, QPushButton, 
-                             QLabel, QSpinBox, QGroupBox, QMessageBox)
-from PyQt5.QtCore import pyqtSignal, QObject
-from PyQt5.QtGui import QFont
+# Changement des imports PyQt5 vers PySide6
+from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
+                               QHBoxLayout, QTextEdit, QLineEdit, QPushButton, 
+                               QLabel, QSpinBox, QGroupBox, QMessageBox)
+from PySide6.QtCore import Signal, QObject # Signal remplace pyqtSignal
+from PySide6.QtGui import QFont
 
 from common.network import start_server, send_message
 from common.crypto import encrypt
 
 class MessageReceiver(QObject):
-    message_received = pyqtSignal(str)
+    message_received = Signal(str) # Changé en Signal
     
     def __init__(self, port):
         super().__init__()
@@ -174,19 +176,19 @@ class ClientGUI(QMainWindow):
         self.log(f"Message: {msg}")
         
         try:
-            # Construction de l'oignon
+            # Construction de l'oignon (Couches de chiffrement RSA successives)
             couche3 = f"DEST:{dest}|MSG:{msg}"
-            couche2 = f"NEXT:R3|DATA:{couche3}"
-            couche1 = f"NEXT:R2|DATA:{couche2}"
-            
-            # Chiffrement
             ch3 = encrypt(couche3, self.keys['R3'])
-            ch2 = encrypt(f"NEXT:R3|DATA:{ch3}", self.keys['R2'])
-            oignon = encrypt(f"NEXT:R2|DATA:{ch2}", self.keys['R1'])
+            
+            couche2 = f"NEXT:R3|DATA:{ch3}"
+            ch2 = encrypt(couche2, self.keys['R2'])
+            
+            couche1 = f"NEXT:R2|DATA:{ch2}"
+            oignon = encrypt(couche1, self.keys['R1'])
             
             self.log(f"Oignon construit: {len(oignon)} caracteres")
             
-            # Envoi a R1
+            # Envoi a R1 (Premier saut du routage)
             result = send_message("192.168.56.102", 9001, oignon)
             
             if result:
@@ -212,4 +214,4 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = ClientGUI()
     window.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec()) # Retrait de l'underscore pour PySide6
