@@ -1,75 +1,69 @@
 import sys
 import os
 import threading
-from datetime import datetime
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
-                               QHBoxLayout, QTextEdit, QLineEdit, QPushButton, 
-                               QLabel, QSpinBox, QGroupBox, QMessageBox)
-from PySide6.QtCore import Signal, QObject
-from PySide6.QtGui import QFont
-
-from common.network import start_server, send_message
-from common.crypto import encrypt
-
-class MessageReceiver(QObject):
-    message_received = Signal(str)
-    def __init__(self, port):
-        super().__init__()
-        self.port = port
-        
-    def start(self):
-        thread = threading.Thread(target=self._run_server, daemon=True)
-        thread.start()
-        
-    def _run_server(self):
-        def handle_message(msg):
-            self.message_received.emit(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}")
-            return "OK"
-        start_server(self.port, handle_message)
+                               QHBoxLayout, QTextEdit, QLineEdit, QPushButton, QLabel)
+from common.network import send_message
+from common.onion import construire_oignon
 
 class ClientGUI(QMainWindow):
     def __init__(self):
         super().__init__()
         self.keys = {}
-        # PORT CHANGÉ ICI : 9999 au lieu de 8888
-        self.listen_port = 9999 
-        
+        self.master_ip = "192.168.1.80" # L'IP de votre Debian 1
         self.init_ui()
-        self.start_receiver()
-        
+
     def init_ui(self):
-        self.setWindowTitle("Client Onion Router - SAE")
+        self.setWindowTitle("Client A - Interface Oignon")
         self.setGeometry(100, 100, 600, 500)
+        
+        layout = QVBoxLayout()
+        self.log_area = QTextEdit()
+        self.log_area.setReadOnly(True)
+        
+        self.btn_keys = QPushButton("1. Recuperer Cles du Master")
+        self.btn_keys.clicked.connect(self.get_keys)
+        
+        # IP de Debian 2 par défaut
+        self.dest_in = QLineEdit("192.168.1.65:8888") 
+        self.msg_in = QLineEdit()
+        self.msg_in.setPlaceholderText("Tapez votre message ici...")
+        self.btn_send = QPushButton("2. Envoyer via Oignon")
+        self.btn_send.clicked.connect(self.send_msg)
+        
+        layout.addWidget(QLabel(f"Master IP: {self.master_ip}"))
+        layout.addWidget(self.btn_keys)
+        layout.addWidget(self.log_area)
+        layout.addWidget(QLabel("Destinataire Final (IP:Port) :"))
+        layout.addWidget(self.dest_in)
+        layout.addWidget(self.msg_in)
+        layout.addWidget(self.btn_send)
+        
         central = QWidget()
+        central.setLayout(layout)
         self.setCentralWidget(central)
-        layout = QVBoxLayout(central)
-        
-        # En-tête de statut du port
-        status_layout = QHBoxLayout()
-        self.port_label = QLabel(f"Serveur d'écoute actif sur le port : {self.listen_port}")
-        self.port_label.setStyleSheet("color: green; font-weight: bold;")
-        status_layout.addWidget(self.port_label)
-        layout.addLayout(status_layout)
 
-        # Zone des messages reçus
-        self.received_text = QTextEdit()
-        self.received_text.setReadOnly(True)
-        layout.addWidget(QLabel("Messages reçus :"))
-        layout.addWidget(self.received_text)
-        
-        # Bouton de test
-        self.btn = QPushButton("Tester l'affichage")
-        self.btn.clicked.connect(lambda: QMessageBox.information(self, "Succès", f"L'interface est opérationnelle sur le port {self.listen_port} !"))
-        layout.addWidget(self.btn)
+    def get_keys(self):
+        res = send_message(self.master_ip, 8000, "GET_KEYS")
+        if res and res != "NO_ROUTERS":
+            for item in res.split(';'):
+                rid, k = item.split(':')
+                self.keys[rid] = tuple(map(int, k.split(',')))
+            self.log_area.append(f"Cles recuperees pour : {list(self.keys.keys())}")
+        else:
+            self.log_area.append("Erreur : Aucun routeur ou Master injoignable.")
 
-    def start_receiver(self):
-        # Initialisation du récepteur sur le port 9999
-        self.receiver = MessageReceiver(self.listen_port)
-        self.receiver.message_received.connect(lambda m: self.received_text.append(m))
-        self.receiver.start()
+    def send_msg(self):
+        message = self.msg_in.text()
+        destination = self.dest_in.text()
+        # On définit le chemin des routeurs enregistrés sur le Master
+        chemin = ["R1", "R2", "R3"] 
+        
+        oignon = construire_oignon(message, destination, chemin, self.keys)
+        if oignon:
+            # Envoi au premier routeur R1 sur Debian 1
+            send_message(self.master_ip, 9001, oignon)
+            self.log_area.append(f"Message envoye via {chemin}")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
