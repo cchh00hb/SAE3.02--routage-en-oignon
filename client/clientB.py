@@ -1,0 +1,1 @@
+#ce code est a mettre sur la machine debian 2 clientB.py 
