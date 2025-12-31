@@ -12,8 +12,22 @@ Le projet est déployé sur deux machines virtuelles :
 
 ## Installation
 
-### 1. Prérequis
+## 1. Prérequis
 ```bash
 sudo apt update && sudo apt install python3 python3-pip -y
 pip install PySide6
 
+## 2. Configuration (À faire dans CHAQUE terminal)
+Il est indispensable d'exporter le chemin des modules pour que Python trouve le dossier common :
+
+export PYTHONPATH=$PYTHONPATH:.
+Lancement - respecter l'ordre
+Sur Debian 1 : Lancer le Master python3 -m master.master
+
+Sur Debian 2 : Lancer le Client B python3 -m client.clientB
+
+Sur Debian 2 : Lancer le Routeur 3 python3 -m router.router R3 9003 192.168.1.80
+
+Sur Debian 1 : Lancer R1 et R2 (dans 2 terminaux) python3 -m router.router R1 9001 192.168.1.80 python3 -m router.router R2 9002 192.168.1.80
+
+Sur Debian 1 : Lancer l'Interface Client A python3 -m common.interface_v3
