@@ -27,24 +27,22 @@ Algorithme : RSA simplifié implémenté  (sans bibliothèques de crypto externe
 Principe : Le Client A récupère les clés publiques du Master, puis chiffre le message en 3 couches successives. Chaque routeur ne possède que sa clé privée et 
 ne peut déchiffrer qu'une seule couche, ne connaissant ainsi que le saut précédent et le saut suivant.
 
-#Installation et Déploiement
+# Installation et Déploiement
 1. Prérequis sur les deux VM
-Bash
+
 
 sudo apt update && sudo apt install python3 python3-pip git -y
 pip install PySide6
 
 2. Récupération du code
-Bash
 
 git clone https://github.com/cchh00hb/SAE3.02--routage-en-oignon.git
-#se mettre a la racine du projet 
+//se mettre a la racine du projet 
 cd /opt/sae3.02-routageoignon/SAE3.02--routage-en-oignon
 
 3. Configuration de l'environnement (IMPORTANT)
 Python nécessite que la racine du projet soit dans le chemin de recherche des modules. Exécutez cette commande dans chaque nouveau terminal :
 
-Bash
 
 export PYTHONPATH=$PYTHONPATH:.
 
@@ -78,7 +76,7 @@ Bash
 
 python3 -m common.interface_v3
 
-Notes Techniques
+# Notes Techniques
 Base de données : Pour des raisons de portabilité et de stabilité réseau lors des tests, la gestion des routeurs et des clés est effectuée en mémoire (dictionnaire Python) par le Master au lieu d'une base MariaDB.
 
 Dépannage : Si un port est bloqué, utilisez fuser -k [PORT]/tcp pour libérer le processus.
