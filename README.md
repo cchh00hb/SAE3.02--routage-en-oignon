@@ -1,10 +1,10 @@
-SAE 3.02 - Architecture Distribuée avec Routage en Oignon
+#SAE 3.02 - Architecture Distribuée avec Routage en Oignon
 Ce projet implémente un système de communication anonyme de type "Tor" (Onion Routing) entre un Client A et un Client B via un circuit de 3 routeurs virtuels.
 
-Vidéo de démonstration
+##Vidéo de démonstration
 Le fonctionnement complet du système est visible ici : 👉 https://youtu.be/MLcqnxFoloY
 
-Architecture du Système
+##Architecture du Système
 Le projet est déployé de manière distribuée sur deux machines virtuelles Debian :
 
 Machine 1 (Debian 1 - 192.168.1.80) :
@@ -21,13 +21,13 @@ Routeur 3 (R3) : Nœud de sortie
 
 Client B : Destinataire final (Bob) qui reçoit le message en clair.
 
-Chiffrement et Anonymisation
+##Chiffrement et Anonymisation
 Algorithme : RSA simplifié implémenté  (sans bibliothèques de crypto externes).
 
 Principe : Le Client A récupère les clés publiques du Master, puis chiffre le message en 3 couches successives. Chaque routeur ne possède que sa clé privée et 
 ne peut déchiffrer qu'une seule couche, ne connaissant ainsi que le saut précédent et le saut suivant.
 
-Installation et Déploiement
+#Installation et Déploiement
 1. Prérequis sur les deux VM
 Bash
 
