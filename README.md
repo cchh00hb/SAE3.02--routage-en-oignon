@@ -37,7 +37,9 @@ pip install PySide6
 2. Récupération du code
 
 git clone https://github.com/cchh00hb/SAE3.02--routage-en-oignon.git
-//se mettre a la racine du projet 
+
+### se mettre a la racine du projet 
+
 cd /opt/sae3.02-routageoignon/SAE3.02--routage-en-oignon
 
 3. Configuration de l'environnement (IMPORTANT)
